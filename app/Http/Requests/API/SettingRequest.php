@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests\API;
 
+/**
+ * @property string media_path
+ */
 class SettingRequest extends Request
 {
     /**
@@ -22,7 +25,7 @@ class SettingRequest extends Request
     public function rules()
     {
         return [
-            'media_path' => 'string|required|valid_path',
+            'media_path' => 'string|required|path.valid',
         ];
     }
 }

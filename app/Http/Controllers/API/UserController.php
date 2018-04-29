@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Requests\API\ProfileUpdateRequest;
 use App\Http\Requests\API\UserStoreRequest;
 use App\Http\Requests\API\UserUpdateRequest;
 use App\Models\User;
+use Exception;
 use Hash;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
+use RuntimeException;
 
 class UserController extends Controller
 {
@@ -15,14 +18,16 @@ class UserController extends Controller
      *
      * @param UserStoreRequest $request
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @throws RuntimeException
+     *
+     * @return JsonResponse
      */
     public function store(UserStoreRequest $request)
     {
         return response()->json(User::create([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => Hash::make($request->input('password')),
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
         ]));
     }
 
@@ -30,52 +35,37 @@ class UserController extends Controller
      * Update a user.
      *
      * @param UserUpdateRequest $request
-     * @param int               $id
+     * @param User              $user
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @throws RuntimeException
+     *
+     * @return JsonResponse
      */
-    public function update(UserUpdateRequest $request, $id)
+    public function update(UserUpdateRequest $request, User $user)
     {
         $data = $request->only('name', 'email');
 
-        if ($password = $request->input('password')) {
-            $data['password'] = Hash::make($password);
+        if ($request->password) {
+            $data['password'] = Hash::make($request->password);
         }
 
-        return response()->json(User::findOrFail($id)->update($data));
+        return response()->json($user->update($data));
     }
 
     /**
      * Delete a user.
      *
-     * @param int $id
+     * @param User $user
      *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function destroy($id)
-    {
-        if (!auth()->user()->is_admin || auth()->user()->id === $id) {
-            abort(403);
-        }
-
-        return response()->json(User::destroy($id));
-    }
-
-    /**
-     * Update the current user's profile.
-     * 
-     * @param ProfileUpdateRequest $request
+     * @throws Exception
+     * @throws AuthorizationException
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function updateProfile(ProfileUpdateRequest $request)
+    public function destroy(User $user)
     {
-        $data = $request->only('name', 'email');
+        $this->authorize('destroy', $user);
 
-        if ($password = $request->input('password')) {
-            $data['password'] = Hash::make($password);
-        }
-
-        return response()->json(auth()->user()->update($data));
+        return response()->json($user->delete());
     }
 }

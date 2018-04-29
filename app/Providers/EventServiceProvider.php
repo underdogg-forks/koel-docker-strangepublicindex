@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use App\Facades\Media;
 use App\Models\Album;
+use App\Models\File;
 use App\Models\Song;
-use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
+use Exception;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -16,29 +16,39 @@ class EventServiceProvider extends ServiceProvider
      * @var array
      */
     protected $listen = [
-        'App\Events\SomeEvent' => [
-            'App\Listeners\EventListener',
+        'App\Events\SongLikeToggled' => [
+            'App\Listeners\LoveTrackOnLastfm',
+        ],
+
+        'App\Events\SongStartedPlaying' => [
+            'App\Listeners\UpdateLastfmNowPlaying',
+        ],
+
+        'App\Events\LibraryChanged' => [
+            'App\Listeners\TidyLibrary',
+            'App\Listeners\ClearMediaCache',
         ],
     ];
 
     /**
      * Register any other events for your application.
-     *
-     * @param \Illuminate\Contracts\Events\Dispatcher $events
      */
-    public function boot(DispatcherContract $events)
+    public function boot()
     {
-        parent::boot($events);
+        parent::boot();
 
         // Generate a unique hash for a song from its path to be the ID
         Song::creating(function ($song) {
-            $song->id = Media::getHash($song->path);
+            $song->id = File::getHash($song->path);
         });
 
         // Remove the cover file if the album is deleted
         Album::deleted(function ($album) {
             if ($album->hasCover) {
-                @unlink(app()->publicPath().'/img/covers/'.$album->cover);
+                try {
+                    unlink(app()->publicPath()."/public/img/covers/{$album->cover}");
+                } catch (Exception $e) {
+                }
             }
         });
     }

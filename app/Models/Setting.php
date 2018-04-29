@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $key
+ * @property mixed $value
+ */
 class Setting extends Model
 {
     protected $primaryKey = 'key';
@@ -59,6 +63,13 @@ class Setting extends Model
         $this->attributes['value'] = serialize($value);
     }
 
+    /**
+     * Get the unserialized setting value.
+     *
+     * @param mixed $value
+     *
+     * @return mixed
+     */
     public function getValueAttribute($value)
     {
         return unserialize($value);
