@@ -11,5 +11,4 @@ web:
   ports:
     - 8000:80
   volumes:
-    - ~/Music:/home/koel/media
-    - .env:/var/www/html/.env
+    - ./Music:/home/koel/media
